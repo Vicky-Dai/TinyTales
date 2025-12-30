@@ -1,0 +1,24 @@
+# Environment variables
+.env
+
+# Story storage (JSON files)
+stories/*.json
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+../venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
