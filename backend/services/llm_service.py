@@ -1,29 +1,36 @@
 """
 LLM service for story generation
-Handles prompt engineering and OpenAI API calls
+Handles prompt engineering and Azure OpenAI API calls
 """
 import os
 import json
 from typing import Dict, List, Optional
-from openai import OpenAI
+from openai import AzureOpenAI
 from fastapi import HTTPException
 from services.moderation import ModerationService
 
-# Lazy initialization of OpenAI client
-_client: Optional[OpenAI] = None
+# Lazy initialization of Azure OpenAI client
+_client: Optional[AzureOpenAI] = None
 
-def get_openai_client() -> Optional[OpenAI]:
-    """Get or create OpenAI client (lazy initialization)"""
+def get_azure_openai_client() -> Optional[AzureOpenAI]:
+    """Get or create Azure OpenAI client (lazy initialization)"""
     global _client
     if _client is None:
-        api_key = os.getenv("OPENAI_API_KEY")
-        if api_key:
-            _client = OpenAI(api_key=api_key)
+        endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+        api_key = os.getenv("AZURE_OPENAI_API_KEY")
+        api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
+        
+        if endpoint and api_key:
+            _client = AzureOpenAI(
+                azure_endpoint=endpoint,
+                api_key=api_key,
+                api_version=api_version
+            )
     return _client
 
 
 class LLMService:
-    """Service for generating stories using OpenAI LLM"""
+    """Service for generating stories using Azure OpenAI LLM"""
     
     @staticmethod
     def build_story_prompt(request_data: Dict) -> str:
@@ -100,7 +107,7 @@ Generate the complete story now. Return ONLY valid JSON, no additional text."""
     @staticmethod
     async def generate_story(request_data: Dict) -> Dict:
         """
-        Generate a complete story using OpenAI LLM
+        Generate a complete story using Azure OpenAI LLM
         
         Args:
             request_data: Story generation request data
@@ -108,11 +115,19 @@ Generate the complete story now. Return ONLY valid JSON, no additional text."""
         Returns:
             Generated story dictionary
         """
-        client = get_openai_client()
-        if not client or not os.getenv("OPENAI_API_KEY"):
+        client = get_azure_openai_client()
+        deployment_name = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME")
+        
+        if not client:
             raise HTTPException(
                 status_code=500,
-                detail="OPENAI_API_KEY not configured"
+                detail="Azure OpenAI client not configured. Please set AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_API_KEY environment variables."
+            )
+        
+        if not deployment_name:
+            raise HTTPException(
+                status_code=500,
+                detail="AZURE_OPENAI_DEPLOYMENT_NAME not configured. Please set the deployment name environment variable."
             )
         
         # Build prompt
@@ -128,9 +143,10 @@ Generate the complete story now. Return ONLY valid JSON, no additional text."""
             )
         
         try:
-            # Call OpenAI API
+            # Call Azure OpenAI API
+            # Note: In Azure OpenAI, we use the deployment name instead of model name
             response = client.chat.completions.create(
-                model="gpt-4o-mini",  # Using mini for faster/cheaper generation
+                model=deployment_name,  # Azure OpenAI uses deployment name
                 messages=[
                     {
                         "role": "system",
@@ -149,17 +165,22 @@ Generate the complete story now. Return ONLY valid JSON, no additional text."""
             if "429" in error_str or "rate limit" in error_str.lower():
                 raise HTTPException(
                     status_code=429,
-                    detail="OpenAI API rate limit exceeded. Please try again in a few minutes."
+                    detail="Azure OpenAI API rate limit exceeded. Please try again in a few minutes."
                 )
             elif "insufficient_quota" in error_str or "quota" in error_str.lower():
                 raise HTTPException(
                     status_code=402,
-                    detail="OpenAI API quota exceeded. Please check your API key billing and add credits to your account."
+                    detail="Azure OpenAI quota exceeded. Please check your Azure account billing and add credits."
+                )
+            elif "401" in error_str or "403" in error_str or "unauthorized" in error_str.lower():
+                raise HTTPException(
+                    status_code=401,
+                    detail="Azure OpenAI authentication failed. Please check your AZURE_OPENAI_API_KEY and endpoint configuration."
                 )
             else:
                 raise HTTPException(
                     status_code=500,
-                    detail=f"OpenAI API error: {str(api_error)}"
+                    detail=f"Azure OpenAI API error: {str(api_error)}"
                 )
         
         # Parse response (only reached if API call succeeded)

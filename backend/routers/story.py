@@ -54,7 +54,7 @@ async def generate_story(request: StoryGenerateRequest):
     if story_data is None:
         raise HTTPException(
             status_code=500,
-            detail="Story generation returned no data. Please check your OpenAI API key and quota."
+            detail="Story generation returned no data. Please check your Azure OpenAI configuration and quota."
         )
     
     # Prepare story for storage
