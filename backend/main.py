@@ -49,7 +49,11 @@ async def root():
         "version": "1.0.0",
         "endpoints": {
             "generate_story": "POST /api/story/generate",
-            "get_story": "GET /api/story/{storyId}"
+            "get_story": "GET /api/story/{storyId}",
+            "generate_audio": "POST /api/story/{storyId}/audio/generate",
+            "generate_page_audio": "POST /api/story/{storyId}/audio/page/{pageNumber}",
+            "audio_status": "GET /api/story/{storyId}/audio/status",
+            "image_status": "GET /api/story/{storyId}/images/status"
         }
     }
 
