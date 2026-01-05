@@ -22,6 +22,7 @@ class StoryPage(BaseModel):
     text: str = Field(..., description="Story text for this page")
     image_prompt: str = Field(..., description="Image generation prompt for this page")
     image_url: Optional[str] = Field(None, description="Path or URL to the generated image for this page")
+    audio_url: Optional[str] = Field(None, description="Path or URL to the generated audio for this page")
 
 
 class StoryResponse(BaseModel):
