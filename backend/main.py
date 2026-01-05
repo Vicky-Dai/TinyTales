@@ -11,6 +11,7 @@ load_dotenv(dotenv_path=env_path)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from routers import story
 
 # Create FastAPI app
@@ -34,6 +35,10 @@ app.add_middleware(
 
 # Include routers
 app.include_router(story.router)
+
+# Mount static files for story images
+# This allows direct access to images via /stories/images/{storyId}/{page}.png
+app.mount("/stories", StaticFiles(directory="stories"), name="stories")
 
 
 @app.get("/")
