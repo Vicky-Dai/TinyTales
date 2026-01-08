@@ -1,6 +1,8 @@
 import streamlit as st
 import base64
 import os
+import json
+from datetime import datetime
 
 # Page configuration
 st.set_page_config(
@@ -10,16 +12,9 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Initialize theme toggle in session state (early, before using it)
-if "use_dark_theme" not in st.session_state:
-    st.session_state.use_dark_theme = True
-
-# Load and embed the appropriate backdrop SVG
+# Load and embed the backdrop SVG
 svg_dir = os.path.join(os.path.dirname(__file__), "assest")
-
-# Use dark theme by default, but will be updated after sidebar toggle
-use_dark = st.session_state.use_dark_theme
-svg_filename = "nightBackDrop.svg" if use_dark else "sunbackdrop.svg"
+svg_filename = "nightBackDrop.svg"
 svg_path = os.path.join(svg_dir, svg_filename)
 
 if os.path.exists(svg_path):
@@ -126,28 +121,53 @@ with col3:
     Interactive page-by-page reading experience keeps children engaged and excited.
     """)
 
-# Sidebar
-st.sidebar.markdown("### 🎨 Theme")
+st.markdown("---")
 
-# Create a toggle for theme switching
-theme_toggle = st.sidebar.toggle(
-    "Dark Mode 🌙",
-    value=st.session_state.use_dark_theme,
-    help="Toggle between dark and light theme"
-)
+# Story Library Section
+st.markdown("### 📚 Your Story Library")
 
-# Update session state if toggle changed
-if theme_toggle != st.session_state.use_dark_theme:
-    st.session_state.use_dark_theme = theme_toggle
-    st.rerun()
+# Get path to stories data folder
+backend_dir = os.path.join(os.path.dirname(__file__), "..", "backend")
+stories_data_dir = os.path.join(backend_dir, "stories", "data")
 
-# Display current theme
-if st.session_state.use_dark_theme:
-    st.sidebar.success("🌙 Dark Mode Active - Night Backdrop")
+# Load all stories
+if os.path.exists(stories_data_dir):
+    story_files = [f for f in os.listdir(stories_data_dir) if f.endswith('.json')]
+    
+    if story_files:
+        st.markdown(f"*Found {len(story_files)} saved {'story' if len(story_files) == 1 else 'stories'}*")
+        
+        # Display stories in a grid
+        cols = st.columns(3)
+        
+        for idx, story_file in enumerate(story_files):
+            story_path = os.path.join(stories_data_dir, story_file)
+            
+            try:
+                with open(story_path, 'r', encoding='utf-8') as f:
+                    story_data = json.load(f)
+                
+                with cols[idx % 3]:
+                    with st.container():
+                        st.markdown(f"**📖 {story_data.get('title', 'Untitled')}**")
+                        st.caption(f"Age: {story_data.get('age_range', 'N/A')} | Pages: {len(story_data.get('pages', []))}")
+                        st.caption(f"Moral: {story_data.get('moral', 'N/A')[:50]}...")
+                        
+                        if st.button(f"Read Story", key=f"read_{story_file}", width="stretch"):
+                            # Load the story into session state
+                            st.session_state.current_story = story_data
+                            st.session_state.current_page = 0
+                            st.switch_page("pages/Read_Story.py")
+            except Exception as e:
+                st.error(f"Error loading {story_file}: {str(e)}")
+    else:
+        st.info("📖 No saved stories yet. Create your first story using the Story Generator!")
+        if st.button("🤖 Go to Story Generator", width="stretch"):
+            st.switch_page("pages/Story_Generator.py")
 else:
-    st.sidebar.success("☀️ Light Mode Active - Sun Backdrop")
+    st.warning("Stories folder not found!")
 
-st.sidebar.markdown("---")
+# Sidebar
 st.sidebar.markdown("### 📌 About")
 st.sidebar.info("""
 **TinyTales** - AI Story Generator

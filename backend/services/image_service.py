@@ -1,55 +1,52 @@
 """
-Image generation service using Azure OpenAI DALL-E
+Image generation service using Azure OpenAI with FLUX model
 Handles image generation for story pages
 """
 import os
-import httpx
+import base64
 from typing import Optional, Tuple
-from openai import AzureOpenAI
+from openai import OpenAI
 from fastapi import HTTPException
 
 # Lazy initialization of Azure OpenAI client
-_image_client: Optional[AzureOpenAI] = None
+_image_client: Optional[OpenAI] = None
 
-def get_azure_openai_image_client() -> Optional[AzureOpenAI]:
+def get_azure_openai_image_client() -> Optional[OpenAI]:
     """Get or create Azure OpenAI client for image generation (lazy initialization)"""
     global _image_client
     if _image_client is None:
         endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
         api_key = os.getenv("AZURE_OPENAI_API_KEY")
-        api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
         
         if endpoint and api_key:
-            _image_client = AzureOpenAI(
-                azure_endpoint=endpoint,
-                api_key=api_key,
-                api_version=api_version
+            _image_client = OpenAI(
+                base_url=endpoint,
+                api_key=api_key
             )
     return _image_client
 
 
 class ImageService:
-    """Service for generating images using Azure OpenAI DALL-E"""
+    """Service for generating images using Azure OpenAI FLUX model"""
     
     @staticmethod
     async def generate_image(image_prompt: str, size: str = "1024x1024") -> Tuple[bytes, str]:
         """
-        Generate an image using Azure OpenAI DALL-E
+        Generate an image using Azure OpenAI FLUX model
         
         Args:
             image_prompt: Text prompt describing the image to generate
-            size: Image size (1024x1024, 1792x1024, or 1024x1792 for DALL-E 3)
+            size: Image size (default: "1024x1024")
         
         Returns:
-            Tuple of (image_bytes, image_url) where image_url is the temporary URL from Azure
+            Tuple of (image_bytes, "base64") - second value is placeholder for compatibility
         
         Raises:
             HTTPException: If image generation fails
         """
         client = get_azure_openai_image_client()
-        # Get DALL-E deployment name (defaults to 'dall-e-3' if not set)
-        # Uses the same endpoint as text generation, but needs DALL-E deployment name
-        deployment_name = os.getenv("AZURE_OPENAI_DALL_E_DEPLOYMENT_NAME", "dall-e-3")
+        # Get FLUX deployment name from env (defaults to 'FLUX.1-Kontext-pro')
+        deployment_name = os.getenv("AZURE_OPENAI_IMAGE_DEPLOYMENT_NAME", "FLUX.1-Kontext-pro")
         
         if not client:
             raise HTTPException(
@@ -58,58 +55,22 @@ class ImageService:
             )
         
         try:
-            # Use DALL-E 3 model (or DALL-E 2 if specified)
-            model = "dall-e-3"  # Default to DALL-E 3
-            dall_e_model = os.getenv("AZURE_OPENAI_DALL_E_MODEL", "dall-e-3")
-            if dall_e_model in ["dall-e-2", "dall-e-3"]:
-                model = dall_e_model
-            
-            # Validate size based on model
-            if model == "dall-e-3":
-                valid_sizes = ["1024x1024", "1792x1024", "1024x1792"]
-                if size not in valid_sizes:
-                    size = "1024x1024"  # Default for DALL-E 3
-            else:  # DALL-E 2
-                valid_sizes = ["256x256", "512x512", "1024x1024"]
-                if size not in valid_sizes:
-                    size = "1024x1024"  # Default for DALL-E 2
-            
-            # Generate image using Azure OpenAI
-            if model == "dall-e-3":
-                response = client.images.generate(
-                    model=deployment_name,  # Azure OpenAI uses deployment name
-                    prompt=image_prompt,
-                    size=size,
-                    n=1,
-                    quality="standard",
-                    style="vivid"
-                )
-            else:  # DALL-E 2
-                response = client.images.generate(
-                    model=deployment_name,  # Azure OpenAI uses deployment name
-                    prompt=image_prompt,
-                    size=size,
-                    n=1
-                )
-            
-            # Get image URL from response
-            image_url = response.data[0].url
-            
-            # Download the image
-            async with httpx.AsyncClient(timeout=30.0) as http_client:
-                image_response = await http_client.get(image_url)
-                image_response.raise_for_status()
-                image_bytes = image_response.content
-            
-            return image_bytes, image_url
-            
-        except httpx.HTTPError as e:
-            raise HTTPException(
-                status_code=500,
-                detail=f"Failed to download generated image: {str(e)}"
+            # Generate image using FLUX model
+            response = client.images.generate(
+                model=deployment_name,
+                prompt=image_prompt,
+                n=1,
+                size=size
             )
+            
+            # Decode base64 image data
+            image_bytes = base64.b64decode(response.data[0].b64_json)
+            
+            return image_bytes, "base64"
+            
         except Exception as api_error:
             error_str = str(api_error)
+            print(f"Image generation error details: {error_str}")  # Add detailed logging
             if "429" in error_str or "rate limit" in error_str.lower():
                 raise HTTPException(
                     status_code=429,

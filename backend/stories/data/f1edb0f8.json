@@ -1,0 +1,60 @@
+{
+  "storyId": "f1edb0f8",
+  "title": "Lila the Brave Rabbit",
+  "pages": [
+    {
+      "page": 1,
+      "text": "In a lovely forest, there lived a brave rabbit named Lila. The sun shone bright and flowers danced in the breeze. Lila loved to explore and play with her friends.",
+      "image_prompt": "kid-friendly, safe, warm children's book illustration, A sunny forest clearing with colorful flowers and a bright blue sky. Lila the rabbit is hopping happily, surrounded by blooming flowers.",
+      "image_url": "images/f1edb0f8/1.png",
+      "audio_url": "audio/f1edb0f8/1.wav"
+    },
+    {
+      "page": 2,
+      "text": "One day, Lila found a tall hill. She wanted to climb it, but it looked steep and big. Worry filled her heart, but her friends, Max the wise owl and Tina the kind squirrel, were near.",
+      "image_prompt": "kid-friendly, safe, warm children's book illustration, Lila the rabbit looking up at a tall hill with a worried expression. Max the wise owl perches on a branch above, while Tina the kind squirrel stands beside Lila, looking encouraging.",
+      "image_url": "images/f1edb0f8/2.png",
+      "audio_url": "audio/f1edb0f8/2.wav"
+    },
+    {
+      "page": 3,
+      "text": "Max hooted, \"You can do it, Lila! Just take it slow. We are here to help you every step of the way!\" Lila felt warm inside, knowing her friends believed in her.",
+      "image_prompt": "kid-friendly, safe, warm children's book illustration, Max the owl giving advice from a tree branch, while Lila the rabbit looks up with renewed hope. Tina the squirrel smiles, ready to cheer her on.",
+      "image_url": "images/f1edb0f8/3.png",
+      "audio_url": "audio/f1edb0f8/3.wav"
+    },
+    {
+      "page": 4,
+      "text": "Lila took a deep breath and began to climb. With each hop, she felt stronger. Tina ran beside her, shouting, \"You’re doing great, Lila!\"",
+      "image_prompt": "kid-friendly, safe, warm children's book illustration, Lila the rabbit climbing the hill with determination, while Tina the squirrel runs beside her, both looking happy and excited.",
+      "image_url": "images/f1edb0f8/4.png",
+      "audio_url": "audio/f1edb0f8/4.wav"
+    },
+    {
+      "page": 5,
+      "text": "When Lila reached the top, she saw a view that took her breath away. The forest sparkled, and her friends cheered loud. \"You did it, Lila! You're so brave!\"",
+      "image_prompt": "kid-friendly, safe, warm children's book illustration, Lila standing proudly at the top of the hill, with a beautiful view of the forest below. Max and Tina are celebrating and cheering, looking joyful.",
+      "image_url": "images/f1edb0f8/5.png",
+      "audio_url": "audio/f1edb0f8/5.wav"
+    },
+    {
+      "page": 6,
+      "text": "Lila smiled wide. She learned that even when things are tough, she could shine with the help of her friends. Together, they could do anything!",
+      "image_prompt": "kid-friendly, safe, warm children's book illustration, Lila, Max, and Tina sitting together on top of the hill, smiling at each other with the sun setting in the background, creating a warm glow.",
+      "image_url": "images/f1edb0f8/6.png",
+      "audio_url": "audio/f1edb0f8/6.wav"
+    }
+  ],
+  "age_range": "6-9",
+  "language": "en",
+  "moral": "Even in tough times, you have the strength to overcome challenges and the support of friends to help you shine.",
+  "characters": [
+    "Lila the Brave Rabbit",
+    "Max the Wise Owl",
+    "Tina the Kind Squirrel"
+  ],
+  "setting": "A sunlit forest clearing with colorful flowers and a sparkling stream",
+  "tone": "warm, gentle, comforting",
+  "needs_support": true,
+  "created_at": "2026-01-08T07:20:31.020421"
+}

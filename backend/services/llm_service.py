@@ -4,28 +4,38 @@ Handles prompt engineering and Azure OpenAI API calls
 """
 import os
 import json
+import logging
 from typing import Dict, List, Optional
-from openai import AzureOpenAI
+from openai import OpenAI
 from fastapi import HTTPException
 from services.moderation import ModerationService
 
-# Lazy initialization of Azure OpenAI client
-_client: Optional[AzureOpenAI] = None
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-def get_azure_openai_client() -> Optional[AzureOpenAI]:
+# Lazy initialization of OpenAI client
+_client: Optional[OpenAI] = None
+
+def get_azure_openai_client() -> Optional[OpenAI]:
     """Get or create Azure OpenAI client (lazy initialization)"""
     global _client
     if _client is None:
         endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
         api_key = os.getenv("AZURE_OPENAI_API_KEY")
-        api_version = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
+        
+        logger.info(f"Initializing Azure OpenAI client:")
+        logger.info(f"  Endpoint: {endpoint}")
+        logger.info(f"  API Key configured: {'Yes' if api_key else 'No'}")
         
         if endpoint and api_key:
-            _client = AzureOpenAI(
-                azure_endpoint=endpoint,
-                api_key=api_key,
-                api_version=api_version
+            _client = OpenAI(
+                base_url=endpoint,
+                api_key=api_key
             )
+            logger.info("Azure OpenAI client initialized successfully")
+        else:
+            logger.error("Azure OpenAI client initialization failed - missing endpoint or API key")
     return _client
 
 
@@ -145,22 +155,68 @@ Generate the complete story now. Return ONLY valid JSON, no additional text."""
         try:
             # Call Azure OpenAI API
             # Note: In Azure OpenAI, we use the deployment name instead of model name
+            logger.info(f"Making Azure OpenAI API call:")
+            logger.info(f"  Deployment: {deployment_name}")
+            logger.info(f"  Max completion tokens: 4000")
+            
             response = client.chat.completions.create(
                 model=deployment_name,  # Azure OpenAI uses deployment name
                 messages=[
                     {
                         "role": "system",
-                        "content": "You are a children's book author specializing in age-appropriate, educational stories. Always respond with valid JSON only."
+                        "content": "You are a children's book author specializing in age-appropriate, educational stories."
                     },
                     {
                         "role": "user",
                         "content": prompt
                     }
                 ],
-                temperature=0.7,
-                max_tokens=2000
+                response_format={
+                    "type": "json_schema",
+                    "json_schema": {
+                        "name": "story_response",
+                        "strict": True,
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "title": {
+                                    "type": "string",
+                                    "description": "The story title"
+                                },
+                                "pages": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "page": {
+                                                "type": "integer",
+                                                "description": "Page number"
+                                            },
+                                            "text": {
+                                                "type": "string",
+                                                "description": "The story text for this page"
+                                            },
+                                            "image_prompt": {
+                                                "type": "string",
+                                                "description": "Detailed image description for illustration"
+                                            }
+                                        },
+                                        "required": ["page", "text", "image_prompt"],
+                                        "additionalProperties": False
+                                    },
+                                    "description": "Array of story pages"
+                                }
+                            },
+                            "required": ["title", "pages"],
+                            "additionalProperties": False
+                        }
+                    }
+                },
+                max_completion_tokens=4000
             )
+            logger.info("Azure OpenAI API call successful")
         except Exception as api_error:
+            logger.error(f"Azure OpenAI API error: {str(api_error)}")
             error_str = str(api_error)
             if "429" in error_str or "rate limit" in error_str.lower():
                 raise HTTPException(
@@ -185,7 +241,16 @@ Generate the complete story now. Return ONLY valid JSON, no additional text."""
         
         # Parse response (only reached if API call succeeded)
         try:
-            content = response.choices[0].message.content.strip()
+            content = response.choices[0].message.content
+            logger.info(f"Raw API response content: {content[:500] if content else 'NONE/EMPTY'}")
+            
+            if not content:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Model returned empty response. This may indicate the model hit a token limit or content filter."
+                )
+            
+            content = content.strip()
             
             # Clean JSON (remove markdown code blocks if present)
             if content.startswith("```json"):
@@ -200,6 +265,7 @@ Generate the complete story now. Return ONLY valid JSON, no additional text."""
             try:
                 story_data = json.loads(content)
             except json.JSONDecodeError as e:
+                logger.error(f"JSON parse error. Content length: {len(content)}, Content: {content[:500]}")
                 raise HTTPException(
                     status_code=500,
                     detail=f"Failed to parse story JSON: {str(e)}. Response: {content[:200]}"
@@ -221,11 +287,13 @@ Generate the complete story now. Return ONLY valid JSON, no additional text."""
                 )
             
             # Validate each page content
-            for page in pages:
+            for i, page in enumerate(pages):
+                logger.info(f"Validating page {i+1}: {page}")
                 if "text" not in page or "image_prompt" not in page:
+                    logger.error(f"Page {i+1} structure: {list(page.keys())}")
                     raise HTTPException(
                         status_code=500,
-                        detail="Story page missing required fields (text, image_prompt)"
+                        detail=f"Story page {i+1} missing required fields (text, image_prompt). Found fields: {list(page.keys())}"
                     )
                 
                 # Check page text for safety

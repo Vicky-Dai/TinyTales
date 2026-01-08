@@ -13,7 +13,7 @@ from models.story import Story
 class StorageService:
     """Service for JSON file-based story storage"""
     
-    STORIES_DIR = "stories"
+    STORIES_DIR = "stories/data"
     
     @staticmethod
     def ensure_stories_dir():

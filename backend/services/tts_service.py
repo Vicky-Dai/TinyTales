@@ -26,15 +26,15 @@ def get_azure_speech_config():
     
     if _speech_config is None:
         speech_key = os.getenv("AZURE_SPEECH_KEY")
-        speech_region = os.getenv("AZURE_SPEECH_REGION")
+        speech_endpoint = os.getenv("AZURE_SPEECH_ENDPOINT")
         
-        if speech_key and speech_region:
+        if speech_key and speech_endpoint:
             _speech_config = speechsdk.SpeechConfig(
                 subscription=speech_key,
-                region=speech_region
+                endpoint=speech_endpoint
             )
             # Set voice name (default to a child-friendly voice)
-            voice_name = os.getenv("AZURE_SPEECH_VOICE_NAME", "en-US-AriaNeural")
+            voice_name = os.getenv("AZURE_SPEECH_VOICE_NAME", "en-US-AvaNeural")
             _speech_config.speech_synthesis_voice_name = voice_name
     return _speech_config
 
@@ -68,59 +68,78 @@ class TTSService:
         if not speech_config:
             raise HTTPException(
                 status_code=500,
-                detail="Azure Speech Services not configured. Please set AZURE_SPEECH_KEY and AZURE_SPEECH_REGION environment variables."
+                detail="Azure Speech Services not configured. Please set AZURE_SPEECH_KEY and AZURE_SPEECH_ENDPOINT environment variables."
             )
         
         # Override voice based on language if needed
         voice_name = TTSService._get_voice_for_language(language)
         speech_config.speech_synthesis_voice_name = voice_name
         
-        # Create synthesizer without audio config to get audio data directly
-        synthesizer = speechsdk.SpeechSynthesizer(speech_config=speech_config)
+        # Set audio output format to get raw audio data
+        speech_config.set_speech_synthesis_output_format(
+            speechsdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3
+        )
+        
+        # Create synthesizer with null output to get audio data directly
+        synthesizer = speechsdk.SpeechSynthesizer(
+            speech_config=speech_config,
+            audio_config=None  # None means we get the audio data in memory
+        )
         
         try:
             # Synthesize text to speech
+            print(f"[TTS] Starting synthesis for text: '{text[:50]}...'")
             result = synthesizer.speak_text_async(text).get()
+            
+            print(f"[TTS] Synthesis result reason: {result.reason}")
             
             if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
                 # Get audio data from result
                 audio_data = result.audio_data
+                print(f"[TTS] Success! Audio data size: {len(audio_data)} bytes")
                 return bytes(audio_data)
             elif result.reason == speechsdk.ResultReason.Canceled:
-                cancellation_details = speechsdk.CancellationDetails(result)
+                cancellation_details = result.cancellation_details
                 error_msg = f"Speech synthesis canceled: {cancellation_details.reason}"
                 if cancellation_details.reason == speechsdk.CancellationReason.Error:
                     error_msg += f" Error details: {cancellation_details.error_details}"
+                print(f"[TTS] Cancellation error: {error_msg}")
                 raise HTTPException(
                     status_code=500,
                     detail=error_msg
                 )
             else:
+                error_msg = f"Speech synthesis failed with reason: {result.reason}"
+                print(f"[TTS] Unexpected reason: {error_msg}")
                 raise HTTPException(
                     status_code=500,
-                    detail=f"Speech synthesis failed: {result.reason}"
+                    detail=error_msg
                 )
+        except HTTPException:
+            raise
         except Exception as e:
             error_str = str(e)
+            print(f"[TTS] Exception during synthesis: {type(e).__name__}: {error_str}")
+            print(f"[TTS] Exception repr: {repr(e)}")
             if "401" in error_str or "unauthorized" in error_str.lower():
                 raise HTTPException(
                     status_code=401,
-                    detail="Azure Speech Services authentication failed. Please check your AZURE_SPEECH_KEY and AZURE_SPEECH_REGION configuration."
+                    detail=f"Azure Speech Services authentication failed: {error_str}"
                 )
             elif "429" in error_str or "rate limit" in error_str.lower():
                 raise HTTPException(
                     status_code=429,
-                    detail="Azure Speech Services rate limit exceeded. Please try again in a few minutes."
+                    detail=f"Azure Speech Services rate limit exceeded: {error_str}"
                 )
             elif "quota" in error_str.lower():
                 raise HTTPException(
                     status_code=402,
-                    detail="Azure Speech Services quota exceeded. Please check your Azure account billing."
+                    detail=f"Azure Speech Services quota exceeded: {error_str}"
                 )
             else:
                 raise HTTPException(
                     status_code=500,
-                    detail=f"Azure Speech Services error: {str(e)}"
+                    detail=f"Azure Speech Services error: {type(e).__name__}: {error_str}"
                 )
     
     @staticmethod

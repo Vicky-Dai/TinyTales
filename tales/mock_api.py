@@ -1,55 +1,12 @@
 """
-Mock API Server for testing the chatbot - Returns stories
+Mock API Server for testing TinyTales - Returns stories matching backend format
 """
 
 from flask import Flask, request, jsonify
 import random
 import time
-import json
 
 app = Flask(__name__)
-
-# Sample stories to return
-SAMPLE_STORIES = [
-    {
-        "storyId": "ef961289",
-        "title": "Emma the Brave Owl",
-        "pages": [
-            {
-                "page": 1,
-                "text": "In a green forest, there lived a wise owl. Her name was Emma. She had big eyes and soft, brown feathers.",
-                "image_prompt": "A bright green forest with tall trees and colorful flowers. Emma the owl is perched on a branch, looking wise and friendly."
-            },
-            {
-                "page": 2,
-                "text": "One day, Emma saw a small cat stuck on a tree. The cat meowed loud and looked scared. Emma wanted to help.",
-                "image_prompt": "A small, fluffy cat on a high tree branch, looking down with wide eyes. Emma the owl is flying close by, looking concerned."
-            },
-            {
-                "page": 3,
-                "text": "Emma took a deep breath. She flew up, up, up to the cat. \"Do not fear! I will help you!\" she said with a smile.",
-                "image_prompt": "Emma the owl flying bravely towards the cat, with a gentle smile. The background shows the tree and forest below."
-            },
-            {
-                "page": 4,
-                "text": "With her wise words, Emma showed the cat how to climb down. The cat was brave and listened to Emma's tips.",
-                "image_prompt": "The cat carefully climbing down the tree, with Emma guiding and encouraging it from above."
-            },
-            {
-                "page": 5,
-                "text": "At last, the cat was safe on the ground. The cat said, \"Thank you, Emma! You are so brave!\" Emma felt happy.",
-                "image_prompt": "The cat happily purring next to Emma on the ground. Emma looks proud and warm, surrounded by the green forest."
-            },
-            {
-                "page": 6,
-                "text": "Emma smiled and said, \"Bravery is helping friends!\" The cat nodded. Together, they played in the sunny forest.",
-                "image_prompt": "Emma the owl and the cat playing together in a sunny spot in the forest, with flowers blooming around them."
-            }
-        ],
-        "age_range": "5-8",
-        "moral": "bravery and helping others"
-    }
-]
 
 @app.before_request
 def before_request():
@@ -72,115 +29,127 @@ def _build_cors_preflight_response():
     response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
     return response, 200
 
-@app.route('/chat', methods=['GET', 'POST', 'OPTIONS'])
-def chat():
-    """Chat endpoint - accepts story creation requests"""
+@app.route('/api/story/generate', methods=['POST', 'OPTIONS'])
+def generate_story_endpoint():
+    """Story generation endpoint - matches backend API"""
     print(f"📨 Request received: {request.method}")
     
     if request.method == 'OPTIONS':
         return _build_cors_preflight_response()
     
-    if request.method == 'GET':
-        return jsonify({"message": "Use POST to send messages", "test": "API is working"}), 200
-    
     try:
         data = request.get_json()
         
-        # Check if it's a story creation request
-        if "age_range" in data and "pages" in data:
-            # Extract story parameters
-            age_range = data.get("age_range", "5-8")
-            language = data.get("language", "en")
-            moral = data.get("moral", "")
-            characters = data.get("characters", [])
-            setting = data.get("setting", "")
-            tone = data.get("tone", "adventurous")
-            num_pages = data.get("pages", 6)
-            
-            print(f"� Story Request: age={age_range}, pages={num_pages}, moral={moral}")
-            
-            time.sleep(2)  # Simulate processing
-            
-            # Return a generated story based on the request
-            story = generate_story(
-                age_range=age_range,
-                language=language,
-                moral=moral,
-                characters=characters,
-                setting=setting,
-                tone=tone,
-                num_pages=num_pages
-            )
-            
-            print(f"✅ Story generated: {story['title']}")
-            return jsonify(story), 200
-        else:
-            # Regular message - return a random story
-            story = random.choice(SAMPLE_STORIES)
-            print(f"✅ Returning story: {story['title']}")
-            return jsonify(story), 200
+        # Extract story parameters
+        age_range = data.get("age_range", "5-8")
+        language = data.get("language", "en")
+        moral = data.get("moral", "kindness")
+        characters = data.get("characters", ["A brave hero"])
+        setting = data.get("setting", "a magical land")
+        tone = data.get("tone", "adventurous")
+        num_pages = data.get("pages", 6)
+        
+        print(f"\n📝 Story Request:")
+        print(f"   Age Range: {age_range}")
+        print(f"   Pages: {num_pages}")
+        print(f"   Moral: {moral}")
+        print(f"   Characters: {', '.join(characters)}")
+        print(f"   Setting: {setting}")
+        print(f"   Tone: {tone}")
+        print(f"   Language: {language}\n")
+        
+        time.sleep(2)  # Simulate AI processing
+        
+        # Generate story based on the request
+        story = generate_story(
+            age_range=age_range,
+            language=language,
+            moral=moral,
+            characters=characters,
+            setting=setting,
+            tone=tone,
+            num_pages=num_pages
+        )
+        
+        print(f"✅ Story generated: {story['title']}\n")
+        return jsonify(story), 200
     
     except Exception as e:
         print(f"❌ Error: {str(e)}")
-        return jsonify({"response": f"Error: {str(e)}"}), 200
+        return jsonify({"detail": f"Error: {str(e)}"}), 500
 
 def generate_story(age_range, language, moral, characters, setting, tone, num_pages):
-    """Generate a story based on parameters"""
+    """Generate a mock story based on parameters"""
     
+    # Story templates by tone
     story_templates = {
-        "5-8": {
-            "adventurous": [
-                "In {setting}, there lived {character1}. One day, {character1} decided to go on an adventure.",
-                "{character1} was exploring {setting} when they found something mysterious.",
-                "The brave {character1} lived in {setting} and was known for their {tone} spirit."
-            ]
-        },
-        "8-12": {
-            "adventurous": [
-                "Deep in {setting}, {character1} and {character2} discovered an incredible secret.",
-                "{character1} had always dreamed of exploring {setting}, and today was the day!",
-                "The quest began when {character1} arrived at {setting}."
-            ]
-        }
+        "adventurous": "embarked on a thrilling adventure",
+        "magical": "discovered magical wonders",
+        "funny": "found themselves in hilarious situations",
+        "mysterious": "solved an intriguing mystery",
+        "heartwarming": "experienced the power of friendship",
+        "educational": "learned fascinating new things"
     }
     
-    # Get template or use default
-    templates = story_templates.get(age_range, story_templates["5-8"]).get(tone, [])
-    template = random.choice(templates) if templates else "In {setting}, {character1} began their journey."
-    
-    # Fill in the template
-    char1 = characters[0] if characters else "a brave hero"
+    # Get main character
+    char1 = characters[0] if characters else "our hero"
     char2 = characters[1] if len(characters) > 1 else "their friend"
+    char3 = characters[2] if len(characters) > 2 else "a companion"
     
-    first_page_text = template.format(
-        setting=setting,
-        character1=char1,
-        character2=char2,
-        tone=tone
-    )
+    # Create story title
+    action = story_templates.get(tone, "went on a journey")
+    title = f"{char1}'s {tone.capitalize()} Tale"
     
     # Generate pages
     pages = []
     for i in range(1, num_pages + 1):
         if i == 1:
-            page_text = first_page_text
+            # Opening page
+            page_text = f"Once upon a time in {setting}, there lived {char1}. {char1} was known for being {tone} and kind."
+            image_prompt = f"A {tone} illustration of {char1} in {setting}, children's book style, colorful and friendly"
+        
+        elif i == 2 and len(characters) > 1:
+            # Introduce other characters
+            page_text = f"One day, {char1} met {char2}. Together, they decided to explore {setting}."
+            image_prompt = f"{char1} and {char2} meeting in {setting}, warm and friendly atmosphere, children's book illustration"
+        
+        elif i == num_pages - 1:
+            # Climax page
+            page_text = f"Through their journey, {char1} discovered that {moral} is the most important thing of all!"
+            image_prompt = f"{char1} having an important realization in {setting}, {tone} mood, children's book art"
+        
         elif i == num_pages:
-            page_text = f"And so, {char1} learned the most important lesson: {moral}. The end."
+            # Ending page
+            page_text = f"From that day forward, {char1} always remembered the lesson of {moral}. And they lived happily ever after!"
+            image_prompt = f"Happy ending scene with {char1} in {setting}, cheerful and uplifting, children's book style"
+        
         else:
-            page_text = f"On their journey through {setting}, {char1} discovered something amazing on page {i}."
+            # Middle pages
+            actions = [
+                f"explored deeper into {setting}",
+                f"made new friends along the way",
+                f"faced a small challenge with courage",
+                f"helped others they met",
+                f"discovered something wonderful"
+            ]
+            action = random.choice(actions)
+            page_text = f"As the adventure continued, {char1} {action}. Every step taught them more about {moral}."
+            image_prompt = f"{char1} {action} in {setting}, {tone} atmosphere, vibrant children's book illustration"
         
         pages.append({
             "page": i,
             "text": page_text,
-            "image_prompt": f"{tone} illustration of {char1} in {setting}"
+            "image_prompt": image_prompt,
+            "image_url": None,  # No actual images in mock
+            "audio_url": None   # No audio in mock
         })
     
-    # Create story object
-    story_id = f"story_{int(time.time())}"
+    # Create story object matching backend format
+    story_id = f"mock_{int(time.time())}"
     
     story = {
         "storyId": story_id,
-        "title": f"{char1}'s {tone.capitalize()} Journey",
+        "title": title,
         "pages": pages,
         "age_range": age_range,
         "moral": moral,
@@ -195,10 +164,22 @@ def health():
     """Health check"""
     return jsonify({"status": "healthy"}), 200
 
+@app.route('/', methods=['GET'])
+def root():
+    """Root endpoint"""
+    return jsonify({
+        "message": "TinyTales Mock API",
+        "version": "1.0.0",
+        "endpoints": {
+            "generate_story": "POST /api/story/generate",
+            "health": "GET /health"
+        }
+    }), 200
+
 if __name__ == '__main__':
-    print("🚀 Mock API Server starting...")
+    print("🚀 TinyTales Mock API Server starting...")
     print("📡 Running on: http://localhost:5001")
-    print("📝 Chat endpoint: http://localhost:5001/chat")
+    print("📝 Story endpoint: POST http://localhost:5001/api/story/generate")
     print("💚 Health check: http://localhost:5001/health")
-    print("\nTry asking for a story! E.g., 'Tell me a story'")
+    print("\n✨ Ready to generate mock stories!\n")
     app.run(debug=True, port=5001, host='0.0.0.0')

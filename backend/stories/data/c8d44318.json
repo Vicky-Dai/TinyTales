@@ -1,0 +1,53 @@
+{
+  "storyId": "c8d44318",
+  "title": "Lila, Toby, and Bella's Great Day",
+  "pages": [
+    {
+      "page": 1,
+      "text": "In a sunny meadow, Lila the Lion yawned. She looked for her friends, Toby the Turtle and Bella the Bird. \"Where are you?\" she called with a smile.",
+      "image_prompt": "kid-friendly, safe, warm children's book illustration, A bright and sunny meadow filled with colorful flowers and green grass. Lila the Lion, a cute lion with a fluffy mane, looks around curiously. Toby the Turtle peeks out from behind a flower, and Bella the Bird flies above with a cheerful expression.",
+      "image_url": "images/c8d44318/1.png",
+      "audio_url": "audio/c8d44318/1.wav"
+    },
+    {
+      "page": 2,
+      "text": "Toby popped out of his shell. \"I am here!\" he said. Bella landed on the tree. \"Let’s play today!\" she chirped happily.",
+      "image_prompt": "kid-friendly, safe, warm children's book illustration, Toby the Turtle happily peeking out from his shell with a big smile. Bella the Bird is perched on a branch, looking cheerful. The background shows a bright blue sky and fluffy clouds.",
+      "image_url": "images/c8d44318/2.png",
+      "audio_url": "audio/c8d44318/2.wav"
+    },
+    {
+      "page": 3,
+      "text": "They played tag and ran all around. Lila ran fast, but Toby was slow. \"Don't worry!\" Lila said. \"We can have fun together!\"",
+      "image_prompt": "kid-friendly, safe, warm children's book illustration, Lila the Lion playfully running while looking back at Toby the Turtle, who is moving slowly but with a big smile. Bella the Bird flutters above them, creating a joyful atmosphere.",
+      "image_url": "images/c8d44318/3.png",
+      "audio_url": "audio/c8d44318/3.wav"
+    },
+    {
+      "page": 4,
+      "text": "When they found a big hill, Toby said, \"I can’t climb!\" Lila smiled and said, \"We can help each other. I will help you up!\"",
+      "image_prompt": "kid-friendly, safe, warm children's book illustration, The three friends are at the base of a sunny hill. Lila the Lion is helping Toby the Turtle up the hill, while Bella the Bird looks on, encouraging them. The scene is filled with bright colors and warmth.",
+      "image_url": "images/c8d44318/4.png",
+      "audio_url": "audio/c8d44318/4.wav"
+    },
+    {
+      "page": 5,
+      "text": "With their friendship, they all reached the top! \"Hooray!\" they yelled. \"Together we can!\" They felt happy and proud, knowing friends make all things fun!",
+      "image_prompt": "kid-friendly, safe, warm children's book illustration, All three friends at the top of the hill, smiling brightly. Lila stands tall, Toby looks proud on her back, and Bella flaps her wings joyfully. The view is stunning, showing the sunny meadow below.",
+      "image_url": "images/c8d44318/5.png",
+      "audio_url": "audio/c8d44318/5.wav"
+    }
+  ],
+  "age_range": "6-9",
+  "language": "en",
+  "moral": "Friendship is important and can overcome challenges.",
+  "characters": [
+    "Lila the Lion",
+    "Toby the Turtle",
+    "Bella the Bird"
+  ],
+  "setting": "Sunny Meadow",
+  "tone": "playful",
+  "needs_support": false,
+  "created_at": "2026-01-08T07:16:39.275862"
+}
